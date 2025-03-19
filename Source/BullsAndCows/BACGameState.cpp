@@ -7,6 +7,8 @@ void ABACGameState::InitializeGame()
 	Answer = UBACLibrary::GenerateRandomNumber();
 	WinnerName.Empty();
 
+	UE_LOG(LogTemp, Warning, TEXT("New Game Started! Answer: %s"), *Answer);
+
 	for (UPlayerGameData* Data : PlayersData)
 	{
 		if (Data)
@@ -68,6 +70,7 @@ bool ABACGameState::EvaluateGameOver(FString& OutWinner)
 {
 	int32 OutCount = 0;
 	int32 ActivePlayers = 0;
+	int CompletedAttemps = 0;
 
 	for (const UPlayerGameData* PlayerData : PlayersData)
 	{

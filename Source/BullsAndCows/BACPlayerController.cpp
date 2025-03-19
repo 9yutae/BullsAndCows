@@ -43,7 +43,7 @@ void ABACPlayerController::OpenChat()
 {
 	if (ABACGameHUD* GameHUD = Cast<ABACGameHUD>(GetHUD()))
 	{
-		if (GameHUD->ChatWidget)
+		if (!GameHUD->ChatWidget)
 		{
 			return;
 		}
