@@ -2,6 +2,7 @@
 #include "BACGameState.h"
 #include "BACLibrary.h"
 #include "BACPlayerController.h"
+#include "BACGameHUD.h"
 #include "Kismet/GameplayStatics.h"
 
 
@@ -14,6 +15,7 @@ void ABACGameMode::BeginPlay()
 ABACGameMode::ABACGameMode()
 {
 	PlayerControllerClass = ABACPlayerController::StaticClass();
+	HUDClass = ABACGameHUD::StaticClass();
 }
 
 void ABACGameMode::GotMessageFromClient(const FString& PlayerName, const FString& Msg)
@@ -59,8 +61,7 @@ void ABACGameMode::ProcessChatMessage(const FString& PlayerName, const FString& 
 void ABACGameMode::HandlePlayerInput(const FString& PlayerName, const FString& Input)
 {
 	ABACGameState* CurrentGameState = GetGameState<ABACGameState>();
-
-	if (CurrentGameState->IsPlayerOut(PlayerName))
+	if (!CurrentGameState || CurrentGameState->IsPlayerOut(PlayerName))
 	{
 		return;
 	}
