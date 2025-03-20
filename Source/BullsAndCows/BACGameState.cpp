@@ -47,17 +47,23 @@ void ABACGameState::RegisterOut(const FString& PlayerName)
 	}
 }
 
-// 시도 횟수 증가 함수
-void ABACGameState::UpdatePlayerAttempt(const FString& PlayerName)
+// 시도 횟수 증가 및 제한
+bool ABACGameState::UpdatePlayerAttempt(const FString& PlayerName)
 {
 	for (UPlayerGameData* PlayerData : PlayersData)
 	{
 		if (PlayerData->PlayerName == PlayerName)
 		{
+			if (PlayerData->Attempts >= 9)
+			{
+				return false;
+			}
+
 			PlayerData->Attempts++;
-			return;
+			return true;
 		}
 	}
+	return false;
 }
 
 // 승리자 설정
@@ -101,10 +107,19 @@ bool ABACGameState::EvaluateGameOver(FString& OutWinner)
 	}
 
 	// 모든 플레이어들의 시도 횟수가 9회 이상일 시 무승부
-	if (TotalAttempts >= (PlayersData.Num() * 9))
+	bool bAllPlayersReacehdMaxAttempts = true;
+	for (const UPlayerGameData* PlayerData : PlayersData)
+	{
+		if (PlayerData->Attempts < 9)
+		{
+			bAllPlayersReacehdMaxAttempts = false;
+			break;
+		}
+	}
+
+	if (bAllPlayersReacehdMaxAttempts)
 	{
 		OutWinner = "Draw";
-		UE_LOG(LogTemp, Warning, TEXT("[BACGameState] EvaluateGameOver: Draw! %d"), PlayersData.Num());
 		return true;
 	}
 

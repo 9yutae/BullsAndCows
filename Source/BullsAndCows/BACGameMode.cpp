@@ -31,6 +31,7 @@ void ABACGameMode::StartGame()
 		if (!bHasBroadcastedWaitingMessage)
 		{
 			BroadCastMessage("Waiting for more players...");
+			bHasBroadcastedWaitingMessage = true;
 		}
 	}
 }
@@ -89,8 +90,13 @@ void ABACGameMode::HandlePlayerInput(const FString& PlayerName, const FString& I
 		return;
 	}
 
+	if (!CurrentGameState->UpdatePlayerAttempt(PlayerName))
+	{
+		BroadCastMessage(FString::Printf(TEXT("%s: Maximum attempts reached! No more guesses allowed."), *PlayerName));
+		return;
+	}
+
 	FBACResult Result = UBACLibrary::CheckInputValue(CurrentGameState->Answer, Input);
-	CurrentGameState->UpdatePlayerAttempt(PlayerName);
 
 	if (Result.bIsOut)
 	{

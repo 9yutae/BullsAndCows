@@ -41,7 +41,7 @@ public:
 
 	void InitializeGame();
 	void RegisterOut(const FString& PlayerName);
-	void UpdatePlayerAttempt(const FString& PlayerName);
+	bool UpdatePlayerAttempt(const FString& PlayerName);
 	void DeclareWinner(const FString& PlayerName);
 	bool EvaluateGameOver(FString& OutWinner);
 
