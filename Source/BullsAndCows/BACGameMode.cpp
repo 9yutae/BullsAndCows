@@ -9,7 +9,30 @@
 void ABACGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	ResetGame();
+	
+	GetWorld()->GetTimerManager().SetTimer(
+		CheckPlayersCountTimer,
+		this,
+		&ABACGameMode::StartGame,
+		1.0f,
+		true
+	);
+}
+
+void ABACGameMode::StartGame()
+{
+	if (GetNumPlayers() >= 2)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CheckPlayersCountTimer);
+		ResetGame();
+	}
+	else
+	{
+		if (!bHasBroadcastedWaitingMessage)
+		{
+			BroadCastMessage("Waiting for more players...");
+		}
+	}
 }
 
 ABACGameMode::ABACGameMode()
@@ -44,14 +67,14 @@ void ABACGameMode::BroadCastMessage(const FString& Msg)
 	}
 }
 
-
 void ABACGameMode::ProcessChatMessage(const FString& PlayerName, const FString& Message)
 {
 	FString Input = Message.RightChop(1);
 	if (Input.Len() != 3 || !Input.IsNumeric() || Input.Contains(TEXT("0")))
 	{
-		BroadCastMessage(FString::Printf(TEXT("%s: [OUT] 잘못된 입력입니다."), *PlayerName));
-		GetGameState<ABACGameState>()->SetPlayerOut(PlayerName);
+		BroadCastMessage(FString::Printf(TEXT("%s: [OUT] Wrong Input."), *PlayerName));
+		GetGameState<ABACGameState>()->RegisterOut(PlayerName);
+		CheckGameEndCondition();
 		return;
 	}
 
@@ -61,7 +84,7 @@ void ABACGameMode::ProcessChatMessage(const FString& PlayerName, const FString& 
 void ABACGameMode::HandlePlayerInput(const FString& PlayerName, const FString& Input)
 {
 	ABACGameState* CurrentGameState = GetGameState<ABACGameState>();
-	if (!CurrentGameState || CurrentGameState->IsPlayerOut(PlayerName))
+	if (!CurrentGameState)
 	{
 		return;
 	}
@@ -69,13 +92,21 @@ void ABACGameMode::HandlePlayerInput(const FString& PlayerName, const FString& I
 	FBACResult Result = UBACLibrary::CheckInputValue(CurrentGameState->Answer, Input);
 	CurrentGameState->UpdatePlayerAttempt(PlayerName);
 
-	// 3 Strikes
-	if (Result.Strikes == 3)
+	if (Result.bIsOut)
 	{
-		CurrentGameState->DeclareWinner(PlayerName);
+		BroadCastMessage(FString::Printf(TEXT("%s: [%s] -> OUT!"), *PlayerName, *Input));
+		CurrentGameState->RegisterOut(PlayerName);
 	}
+	else
+	{
+		BroadCastMessage(FString::Printf(TEXT("%s: [%s] -> %dS %dB"), *PlayerName, *Input, Result.Strikes, Result.Balls));
 
-	BroadCastMessage(FString::Printf(TEXT("%s: %dS %dB"), *PlayerName, Result.Strikes, Result.Balls));
+		// 3 Strikes
+		if (Result.Strikes == 3)
+		{
+			CurrentGameState->DeclareWinner(PlayerName);
+		}
+	}
 
 	if (CheckGameEndCondition())
 	{
@@ -83,20 +114,12 @@ void ABACGameMode::HandlePlayerInput(const FString& PlayerName, const FString& I
 	}
 }
 
-void ABACGameMode::ResetGame()
-{
-	GetGameState<ABACGameState>()->InitializeGame();
-	BroadCastMessage("Game Start!");
-}
-
 bool ABACGameMode::CheckGameEndCondition()
 {
 	ABACGameState* CurrentGameState = GetGameState<ABACGameState>();
 
 	FString Winner;
-	bool bIsGameOver = CurrentGameState->EvaluateGameOver(Winner);
-	
-	if (bIsGameOver)
+	if (CurrentGameState->EvaluateGameOver(Winner))
 	{
 		if (Winner == "Draw")
 		{
@@ -106,7 +129,16 @@ bool ABACGameMode::CheckGameEndCondition()
 		{
 			BroadCastMessage(FString::Printf(TEXT("%s Wins!! Restarting game..."), *Winner));
 		}
+
+		return true;
 	}
 
-	return bIsGameOver;
+	return false;
+}
+
+
+void ABACGameMode::ResetGame()
+{
+	GetGameState<ABACGameState>()->InitializeGame();
+	BroadCastMessage("Game Start!");
 }

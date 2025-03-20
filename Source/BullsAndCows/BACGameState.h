@@ -14,10 +14,10 @@ public:
 	FString PlayerName;
 
 	UPROPERTY(Replicated)
-	int32 Attemps = 0;
+	int32 OutCount = 0;
 
 	UPROPERTY(Replicated)
-	bool bIsOut = false;
+	int32 Attempts = 0;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -40,15 +40,12 @@ public:
 	FString WinnerName;
 
 	void InitializeGame();
+	void RegisterOut(const FString& PlayerName);
 	void UpdatePlayerAttempt(const FString& PlayerName);
-	bool IsPlayerOut(const FString& PlayerName);
-	void SetPlayerOut(const FString& PlayerName);
 	void DeclareWinner(const FString& PlayerName);
 	bool EvaluateGameOver(FString& OutWinner);
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
-	UFUNCTION()
-	void OnRep_Answer();
+
 };

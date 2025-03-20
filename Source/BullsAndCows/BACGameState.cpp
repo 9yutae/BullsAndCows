@@ -1,14 +1,18 @@
 #include "BACGameState.h"
 #include "BACLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "GameFramework/PlayerState.h"
 
+//  게임 초기화
 void ABACGameState::InitializeGame()
 {
+	// 새로운 난수 생성
 	Answer = UBACLibrary::GenerateRandomNumber();
 	WinnerName.Empty();
 
 	UE_LOG(LogTemp, Warning, TEXT("New Game Started! Answer: %s"), *Answer);
 
+	// 플레이어 데이터 초기화
 	for (UPlayerGameData* Data : PlayersData)
 	{
 		if (Data)
@@ -18,81 +22,89 @@ void ABACGameState::InitializeGame()
 	}
 
 	PlayersData.Empty();
+
+	// 현재 세션의 모든 플레이어 정보 추가
+	for (APlayerState* PlayerState : GetWorld()->GetGameState()->PlayerArray)
+	{
+		UPlayerGameData* NewPlayerData = NewObject<UPlayerGameData>(this);
+		NewPlayerData->PlayerName = PlayerState->GetPlayerName();
+		PlayersData.Add(NewPlayerData);
+
+		UE_LOG(LogTemp, Warning, TEXT("Player %s added to PlayersData"), *NewPlayerData->PlayerName);
+	}
 }
 
+// 플레이어 OUT 카운트 증가
+void ABACGameState::RegisterOut(const FString& PlayerName)
+{
+	for (UPlayerGameData* PlayerData : PlayersData)
+	{
+		if (PlayerData->PlayerName == PlayerName)
+		{
+			PlayerData->OutCount++;
+			return;
+		}
+	}
+}
+
+// 시도 횟수 증가 함수
 void ABACGameState::UpdatePlayerAttempt(const FString& PlayerName)
 {
 	for (UPlayerGameData* PlayerData : PlayersData)
 	{
 		if (PlayerData->PlayerName == PlayerName)
 		{
-			PlayerData->Attemps++;
-
-			if (PlayerData->Attemps >= 3)
-			{
-				PlayerData->bIsOut = true;
-			}
+			PlayerData->Attempts++;
 			return;
 		}
 	}
 }
 
-bool ABACGameState::IsPlayerOut(const FString& PlayerName)
-{
-	for (const UPlayerGameData* PlayerData : PlayersData)
-	{
-		if (PlayerData->PlayerName == PlayerName)
-		{
-			return PlayerData->bIsOut;
-		}
-	}
-	return false;
-}
-
-void ABACGameState::SetPlayerOut(const FString& PlayerName)
-{
-	for (UPlayerGameData* PlayerData : PlayersData)
-	{
-		if (PlayerData->PlayerName == PlayerName)
-		{
-			PlayerData->bIsOut = true;
-			return;
-		}
-	}
-}
-
+// 승리자 설정
 void ABACGameState::DeclareWinner(const FString& PlayerName)
 {
 	WinnerName = PlayerName;
 }
 
+// 게임 종료 조건
 bool ABACGameState::EvaluateGameOver(FString& OutWinner)
 {
-	int32 OutCount = 0;
-	int32 ActivePlayers = 0;
-	int CompletedAttemps = 0;
-
-	for (const UPlayerGameData* PlayerData : PlayersData)
-	{
-		if (PlayerData->bIsOut || PlayerData->Attemps >= 3)
-		{
-			OutCount++;
-		}
-		else
-		{
-			ActivePlayers++;
-		}
-	}
-
+	// 승자가 이미 있다면 종료
 	if (!WinnerName.IsEmpty())
 	{
 		OutWinner = WinnerName;
+		UE_LOG(LogTemp, Warning, TEXT("[BACGameState] EvaluateGameOver: Winner Name is Valid. %s"), *OutWinner);
 		return true;
 	}
 
-	if (OutCount == PlayersData.Num() || ActivePlayers == 0)
+	int32 TotalAttempts = 0;
+	int32 OutCount = 0;
+
+	for (const UPlayerGameData* PlayerData : PlayersData)
+	{
+		TotalAttempts += PlayerData->Attempts;
+		if (PlayerData->OutCount >= 3)
+		{
+			OutCount++;
+		}
+	}
+
+	// 모든 플레이어가 OUT이면 승자 판별
+	if (OutCount == PlayersData.Num() - 1)
+	{
+		for (const UPlayerGameData* PlayerData : PlayersData)
+		{
+			OutWinner = PlayerData->PlayerName;
+			UE_LOG(LogTemp, Warning, TEXT("[BACGameState] EvaluateGameOver: All Other Players are Died."), *OutWinner);
+			return true;
+		}
+	}
+
+	// 모든 플레이어들의 시도 횟수가 9회 이상일 시 무승부
+	if (TotalAttempts >= (PlayersData.Num() * 9))
 	{
 		OutWinner = "Draw";
+		UE_LOG(LogTemp, Warning, TEXT("[BACGameState] EvaluateGameOver: Draw! %d"), PlayersData.Num());
 		return true;
 	}
 
@@ -112,11 +124,6 @@ void UPlayerGameData::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UPlayerGameData, PlayerName);
-	DOREPLIFETIME(UPlayerGameData, Attemps);
-	DOREPLIFETIME(UPlayerGameData, bIsOut);
-}
-
-void ABACGameState::OnRep_Answer()
-{
-	UE_LOG(LogTemp, Warning, TEXT("New Answer Received: %s"), *Answer);
+	DOREPLIFETIME(UPlayerGameData, OutCount);
+	DOREPLIFETIME(UPlayerGameData, Attempts);
 }

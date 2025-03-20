@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "BACGameState.h"
+#include "TimerManager.h"
 #include "BACGameMode.generated.h"
 
 UCLASS()
@@ -24,5 +25,9 @@ public:
 
 private:
 	bool CheckGameEndCondition();
+	
+	void StartGame();
+	FTimerHandle CheckPlayersCountTimer;
+	bool bHasBroadcastedWaitingMessage = false;
 
 };
