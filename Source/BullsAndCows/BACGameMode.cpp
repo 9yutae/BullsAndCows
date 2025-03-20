@@ -5,7 +5,6 @@
 #include "BACGameHUD.h"
 #include "Kismet/GameplayStatics.h"
 
-
 void ABACGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -17,6 +16,12 @@ void ABACGameMode::BeginPlay()
 		1.0f,
 		true
 	);
+}
+
+ABACGameMode::ABACGameMode()
+{
+	PlayerControllerClass = ABACPlayerController::StaticClass();
+	HUDClass = ABACGameHUD::StaticClass();
 }
 
 void ABACGameMode::StartGame()
@@ -36,17 +41,76 @@ void ABACGameMode::StartGame()
 	}
 }
 
-ABACGameMode::ABACGameMode()
+void ABACGameMode::ResetGame()
 {
-	PlayerControllerClass = ABACPlayerController::StaticClass();
-	HUDClass = ABACGameHUD::StaticClass();
+	ABACGameState* CurrentGameState = GetGameState<ABACGameState>();
+	if (!CurrentGameState)
+	{
+		return;
+	}
+
+	CurrentGameState->InitializeGame();
+	CurrentGameState->SelectFirstTurnPlayer();
+
+	BroadCastMessage(FString::Printf(TEXT("Game Start!\n%s's Turn."), *CurrentGameState->CurrentTurnPlayer));
+	StartTurnTimer();
+}
+
+void ABACGameMode::StartTurnTimer()
+{
+	GetWorld()->GetTimerManager().ClearTimer(TurnTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(
+		TurnTimerHandle,
+		this,
+		&ABACGameMode::HandleTurnTimeout,
+		10,
+		false
+	);
+}
+
+void ABACGameMode::HandleTurnTimeout()
+{
+	EndTurn(true);
+}
+
+void ABACGameMode::EndTurn(bool bIsTimeout)
+{
+	ABACGameState* CurrentGameState = GetGameState<ABACGameState>();
+	if (!CurrentGameState)
+	{
+		return;
+	}
+
+	if (bIsTimeout)
+	{
+		BroadCastMessage(FString::Printf(TEXT("%s's turn timed out!"), *CurrentGameState->CurrentTurnPlayer));
+	}
+
+	CurrentGameState->SetNextTurn();
+	BroadCastMessage(FString::Printf(TEXT("Now it's %s's turn!"), *CurrentGameState->CurrentTurnPlayer));
+
+	StartTurnTimer();
 }
 
 void ABACGameMode::GotMessageFromClient(const FString& PlayerName, const FString& Msg)
 {
 	if (Msg.StartsWith(TEXT("/")))
 	{
-		ProcessChatMessage(PlayerName, Msg);
+		ABACGameState* CurrentGameState = GetGameState<ABACGameState>();
+		if (!CurrentGameState)
+		{
+			return;
+		}
+
+		if (CurrentGameState->CurrentTurnPlayer == PlayerName)
+		{
+			ProcessChatMessage(PlayerName, Msg);
+		}
+		else
+		{
+			BroadCastMessage(FString::Printf(TEXT("%s, It's %s's turn!"), *PlayerName, *CurrentGameState->CurrentTurnPlayer));
+			return;
+		}
 	}
 	else
 	{
@@ -75,7 +139,14 @@ void ABACGameMode::ProcessChatMessage(const FString& PlayerName, const FString& 
 	{
 		BroadCastMessage(FString::Printf(TEXT("%s: [OUT] Wrong Input."), *PlayerName));
 		GetGameState<ABACGameState>()->RegisterOut(PlayerName);
-		CheckGameEndCondition();
+		
+		if (CheckGameEndCondition())
+		{
+			ResetGame();
+			return;
+		}
+
+		EndTurn(false);
 		return;
 	}
 
@@ -117,7 +188,10 @@ void ABACGameMode::HandlePlayerInput(const FString& PlayerName, const FString& I
 	if (CheckGameEndCondition())
 	{
 		ResetGame();
+		return;
 	}
+
+	EndTurn(false);
 }
 
 bool ABACGameMode::CheckGameEndCondition()
@@ -140,11 +214,4 @@ bool ABACGameMode::CheckGameEndCondition()
 	}
 
 	return false;
-}
-
-
-void ABACGameMode::ResetGame()
-{
-	GetGameState<ABACGameState>()->InitializeGame();
-	BroadCastMessage("Game Start!");
 }

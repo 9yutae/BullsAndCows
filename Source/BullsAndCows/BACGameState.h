@@ -34,16 +34,22 @@ public:
 	FString Answer;
 
 	UPROPERTY(Replicated)
-	TArray<UPlayerGameData*> PlayersData;
+	FString WinnerName;
 
 	UPROPERTY(Replicated)
-	FString WinnerName;
+	FString CurrentTurnPlayer;
+
+	UPROPERTY(Replicated)
+	TArray<UPlayerGameData*> PlayersData;
 
 	void InitializeGame();
 	void RegisterOut(const FString& PlayerName);
 	bool UpdatePlayerAttempt(const FString& PlayerName);
 	void DeclareWinner(const FString& PlayerName);
 	bool EvaluateGameOver(FString& OutWinner);
+
+	void SelectFirstTurnPlayer();
+	void SetNextTurn();
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

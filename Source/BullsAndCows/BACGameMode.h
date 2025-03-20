@@ -23,11 +23,15 @@ public:
 	void HandlePlayerInput(const FString& PlayerName, const FString& Input);
 	void ResetGame();
 
+	void StartTurnTimer();
+	void HandleTurnTimeout();
+	void EndTurn(bool bIsTimeout);
+
 private:
 	bool CheckGameEndCondition();
-	
 	void StartGame();
-	FTimerHandle CheckPlayersCountTimer;
 	bool bHasBroadcastedWaitingMessage = false;
+	FTimerHandle CheckPlayersCountTimer;
+	FTimerHandle TurnTimerHandle;
 
 };

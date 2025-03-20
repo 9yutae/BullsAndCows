@@ -126,12 +126,41 @@ bool ABACGameState::EvaluateGameOver(FString& OutWinner)
 	return false;
 }
 
+void ABACGameState::SelectFirstTurnPlayer()
+{
+	if (PlayersData.Num() == 0)
+	{
+		return;
+	}
+
+	int32 RandomIndex = FMath::RandRange(0, PlayersData.Num());
+	CurrentTurnPlayer = PlayersData[RandomIndex]->PlayerName;
+}
+
+void ABACGameState::SetNextTurn()
+{
+	if (PlayersData.Num() == 0)
+	{
+		return;
+	}
+
+	int32 CurrentIndex = PlayersData.IndexOfByPredicate(
+		[&](UPlayerGameData* PlayerData) {
+			return PlayerData->PlayerName == CurrentTurnPlayer;
+		}
+	);
+
+	int32 NextIndex = (CurrentIndex + 1) % PlayersData.Num();
+	CurrentTurnPlayer = PlayersData[NextIndex]->PlayerName;
+}
+
 void ABACGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABACGameState, Answer);
 	DOREPLIFETIME(ABACGameState, WinnerName);
+	DOREPLIFETIME(ABACGameState, CurrentTurnPlayer);
 	DOREPLIFETIME(ABACGameState, PlayersData);
 }
 
