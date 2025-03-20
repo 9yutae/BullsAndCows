@@ -133,7 +133,7 @@ void ABACGameState::SelectFirstTurnPlayer()
 		return;
 	}
 
-	int32 RandomIndex = FMath::RandRange(0, PlayersData.Num());
+	int32 RandomIndex = FMath::RandRange(0, PlayersData.Num() - 1);
 	CurrentTurnPlayer = PlayersData[RandomIndex]->PlayerName;
 }
 

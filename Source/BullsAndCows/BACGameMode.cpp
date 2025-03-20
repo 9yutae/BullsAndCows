@@ -35,7 +35,7 @@ void ABACGameMode::StartGame()
 	{
 		if (!bHasBroadcastedWaitingMessage)
 		{
-			BroadCastMessage("Waiting for more players...");
+			BroadCastMessage("Waiting for more players...", EChatMessageType::ECT_SYSTEM);
 			bHasBroadcastedWaitingMessage = true;
 		}
 	}
@@ -52,7 +52,7 @@ void ABACGameMode::ResetGame()
 	CurrentGameState->InitializeGame();
 	CurrentGameState->SelectFirstTurnPlayer();
 
-	BroadCastMessage(FString::Printf(TEXT("Game Start!\n%s's Turn."), *CurrentGameState->CurrentTurnPlayer));
+	BroadCastMessage(FString::Printf(TEXT("Game Start!\n%s's Turn."), *CurrentGameState->CurrentTurnPlayer), EChatMessageType::ECT_SYSTEM);
 	StartTurnTimer();
 }
 
@@ -83,11 +83,11 @@ void ABACGameMode::EndTurn(bool bIsTimeout)
 
 	if (bIsTimeout)
 	{
-		BroadCastMessage(FString::Printf(TEXT("%s's turn timed out!"), *CurrentGameState->CurrentTurnPlayer));
+		BroadCastMessage(FString::Printf(TEXT("%s's turn timed out!"), *CurrentGameState->CurrentTurnPlayer), EChatMessageType::ECT_WARNING);
 	}
 
 	CurrentGameState->SetNextTurn();
-	BroadCastMessage(FString::Printf(TEXT("Now it's %s's turn!"), *CurrentGameState->CurrentTurnPlayer));
+	BroadCastMessage(FString::Printf(TEXT("Now it's %s's turn!"), *CurrentGameState->CurrentTurnPlayer), EChatMessageType::ECT_SYSTEM);
 
 	StartTurnTimer();
 }
@@ -108,17 +108,17 @@ void ABACGameMode::GotMessageFromClient(const FString& PlayerName, const FString
 		}
 		else
 		{
-			BroadCastMessage(FString::Printf(TEXT("%s, It's %s's turn!"), *PlayerName, *CurrentGameState->CurrentTurnPlayer));
+			BroadCastMessage(FString::Printf(TEXT("%s, It's %s's turn!"), *PlayerName, *CurrentGameState->CurrentTurnPlayer), EChatMessageType::ECT_WARNING);
 			return;
 		}
 	}
 	else
 	{
-		BroadCastMessage(FString::Printf(TEXT("%s: %s"), *PlayerName, *Msg));
+		BroadCastMessage(FString::Printf(TEXT("%s: %s"), *PlayerName, *Msg), EChatMessageType::ECT_GENERAL);
 	}
 }
 
-void ABACGameMode::BroadCastMessage(const FString& Msg)
+void ABACGameMode::BroadCastMessage(const FString& Msg, EChatMessageType MessageType)
 {
 	TArray<AActor*> PlayerController;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABACPlayerController::StaticClass(), PlayerController);
@@ -127,7 +127,7 @@ void ABACGameMode::BroadCastMessage(const FString& Msg)
 	{
 		if (ABACPlayerController* PC = Cast<ABACPlayerController>(Controller))
 		{
-			PC->GotBroadCast(Msg);
+			PC->GotBroadCast(Msg, MessageType);
 		}
 	}
 }
@@ -137,7 +137,7 @@ void ABACGameMode::ProcessChatMessage(const FString& PlayerName, const FString& 
 	FString Input = Message.RightChop(1);
 	if (Input.Len() != 3 || !Input.IsNumeric() || Input.Contains(TEXT("0")))
 	{
-		BroadCastMessage(FString::Printf(TEXT("%s: [OUT] Wrong Input."), *PlayerName));
+		BroadCastMessage(FString::Printf(TEXT("%s: [OUT] Wrong Input."), *PlayerName), EChatMessageType::ECT_ERROR);
 		GetGameState<ABACGameState>()->RegisterOut(PlayerName);
 		
 		if (CheckGameEndCondition())
@@ -163,7 +163,7 @@ void ABACGameMode::HandlePlayerInput(const FString& PlayerName, const FString& I
 
 	if (!CurrentGameState->UpdatePlayerAttempt(PlayerName))
 	{
-		BroadCastMessage(FString::Printf(TEXT("%s: Maximum attempts reached! No more guesses allowed."), *PlayerName));
+		BroadCastMessage(FString::Printf(TEXT("%s: Maximum attempts reached! No more guesses allowed."), *PlayerName), EChatMessageType::ECT_WARNING);
 		return;
 	}
 
@@ -171,12 +171,12 @@ void ABACGameMode::HandlePlayerInput(const FString& PlayerName, const FString& I
 
 	if (Result.bIsOut)
 	{
-		BroadCastMessage(FString::Printf(TEXT("%s: [%s] -> OUT!"), *PlayerName, *Input));
+		BroadCastMessage(FString::Printf(TEXT("%s: [%s] -> OUT!"), *PlayerName, *Input), EChatMessageType::ECT_ERROR);
 		CurrentGameState->RegisterOut(PlayerName);
 	}
 	else
 	{
-		BroadCastMessage(FString::Printf(TEXT("%s: [%s] -> %dS %dB"), *PlayerName, *Input, Result.Strikes, Result.Balls));
+		BroadCastMessage(FString::Printf(TEXT("%s: [%s] -> %dS %dB"), *PlayerName, *Input, Result.Strikes, Result.Balls), EChatMessageType::ECT_GENERAL);
 
 		// 3 Strikes
 		if (Result.Strikes == 3)
@@ -203,11 +203,11 @@ bool ABACGameMode::CheckGameEndCondition()
 	{
 		if (Winner == "Draw")
 		{
-			BroadCastMessage(TEXT("Draw! Restarting game..."));
+			BroadCastMessage(TEXT("Draw! Restarting game..."), EChatMessageType::ECT_SYSTEM);
 		}
 		else
 		{
-			BroadCastMessage(FString::Printf(TEXT("%s Wins!! Restarting game..."), *Winner));
+			BroadCastMessage(FString::Printf(TEXT("%s Wins!! Restarting game..."), *Winner), EChatMessageType::ECT_SYSTEM);
 		}
 
 		return true;

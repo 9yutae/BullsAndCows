@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
+#include "ChatMessage.h"
 #include "BACPlayerController.generated.h"
 
 UCLASS()
@@ -20,7 +21,7 @@ public:
 	void SendMessageToServer(const FString& Msg);
 
 	UFUNCTION(Client, Reliable)
-	void GotBroadCast(const FString& Msg);
+	void GotBroadCast(const FString& Msg, EChatMessageType MessageType);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")

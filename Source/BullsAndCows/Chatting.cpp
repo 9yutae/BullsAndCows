@@ -26,14 +26,14 @@ void UChatting::ActivateChat()
 	}
 }
 
-void UChatting::AddChatMessage(const FString& Message)
+void UChatting::AddChatMessage(const FString& Message, EChatMessageType MessageType)
 {
 	if (ChatScrollBox)
 	{
 		UChatMessage* ChatMessageWidget = CreateWidget<UChatMessage>(GetWorld(), ChatMessageClass);
 		if (ChatMessageWidget)
 		{
-			ChatMessageWidget->SetChatMessage(Message);
+			ChatMessageWidget->SetChatMessage(Message, MessageType);
 			ChatScrollBox->AddChild(ChatMessageWidget);
 			ChatScrollBox->ScrollToEnd();
 		}

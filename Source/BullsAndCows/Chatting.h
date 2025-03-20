@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "SlateCore.h"
+#include "ChatMessage.h"
 #include "Chatting.generated.h"
 
 UCLASS()
@@ -23,7 +24,7 @@ public:
 	void ActivateChat();
 
 	UFUNCTION()
-	void AddChatMessage(const FString& Message);
+	void AddChatMessage(const FString& Message, EChatMessageType MessageType);
 
 	UFUNCTION()
 	void OnTextCommitted(const FText& Text, ETextCommit::Type CommitMethod);

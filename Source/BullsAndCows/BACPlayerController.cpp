@@ -70,13 +70,13 @@ bool ABACPlayerController::SendMessageToServer_Validate(const FString& Msg)
 }
 
 
-void ABACPlayerController::GotBroadCast_Implementation(const FString& Msg)
+void ABACPlayerController::GotBroadCast_Implementation(const FString& Msg, EChatMessageType MessageType)
 {
 	if (ABACGameHUD* GameHUD = Cast<ABACGameHUD>(GetHUD()))
 	{
 		if (GameHUD->ChatWidget)
 		{
-			GameHUD->AddChatMessage(Msg);
+			GameHUD->AddChatMessage(Msg, MessageType);
 		}
 	}
 }

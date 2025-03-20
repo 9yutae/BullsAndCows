@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
 #include "Chatting.h"
+#include "ChatMessage.h"
 #include "BACGameHUD.generated.h"
 
 UCLASS()
@@ -19,6 +20,6 @@ public:
 	UPROPERTY()
 	UChatting* ChatWidget;
 
-	void AddChatMessage(const FString& Message);
+	void AddChatMessage(const FString& Message, EChatMessageType MessageType);
 
 };

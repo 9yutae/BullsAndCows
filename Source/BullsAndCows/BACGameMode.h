@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "BACGameState.h"
+#include "ChatMessage.h"
 #include "TimerManager.h"
 #include "BACGameMode.generated.h"
 
@@ -18,7 +19,7 @@ public:
 	ABACGameMode();
 
 	void GotMessageFromClient(const FString& PlayerName, const FString& Msg);
-	void BroadCastMessage(const FString& Msg);
+	void BroadCastMessage(const FString& Msg, EChatMessageType MessageType);
 	void ProcessChatMessage(const FString& PlayerName, const FString& Message);
 	void HandlePlayerInput(const FString& PlayerName, const FString& Input);
 	void ResetGame();

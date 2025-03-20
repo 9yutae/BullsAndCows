@@ -17,7 +17,7 @@ void ABACGameHUD::BeginPlay()
 	}
 }
 
-void ABACGameHUD::AddChatMessage(const FString& Message)
+void ABACGameHUD::AddChatMessage(const FString& Message, EChatMessageType MessageType)
 {
 	if (!ChatWidget)
 	{
@@ -31,5 +31,5 @@ void ABACGameHUD::AddChatMessage(const FString& Message)
 		ChatWidget->SetVisibility(ESlateVisibility::Visible);
 	}
 
-	ChatWidget->AddChatMessage(Message);
+	ChatWidget->AddChatMessage(Message, MessageType);
 }
