@@ -63,7 +63,7 @@ void ABACGameMode::StartTurnTimer()
 		TurnTimerHandle,
 		this,
 		&ABACGameMode::HandleTurnTimeout,
-		10,
+		TurnTimeLimit,
 		false
 	);
 }

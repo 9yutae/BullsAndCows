@@ -28,6 +28,9 @@ public:
 	void HandleTurnTimeout();
 	void EndTurn(bool bIsTimeout);
 
+	UPROPERTY(EditDefaultsOnly, Category = "Turn")
+	int32 TurnTimeLimit = 30;
+
 private:
 	bool CheckGameEndCondition();
 	void StartGame();
